@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillChain - Платформа Управления Навыками</title>
+    <!-- Подключение Tailwind CSS через CDN для стилизации -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Подключение Chart.js для визуализации данных -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Подключение Mermaid для диаграмм -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <!-- Подключение D3.js для интерактивных диаграмм -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Инициализация Mermaid для автоматического рендеринга диаграмм
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <!-- Подключение Animate.css для анимаций -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        /* Дополнительные стили для анимаций и улучшений UI бро добавь еще */
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-button:hover {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Темная тема */
+        .dark-mode {
+            background-color: #1a202c;
+            color: #a0aec0;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #2d3748;
+        }
+
+        .dark-mode .bg-gray-100 {
+            background-color: #1a202c;
+        }
+
+        .dark-mode .text-white {
+            color: #a0aec0;
+        }
+
+        .dark-mode .border {
+            border-color: #4a5568;
+        }
+
+        /* Стили для модальных окон */
+        .modal {
+            display: none; /* Скрыто по умолчанию */
+            position: fixed; /* Остается на месте */
+            z-index: 50; /* Поверх остальных элементов */
+            left: 0;
+            top: 0;
+            width: 100%; /* Полная ширина */
+            height: 100%; /* Полная высота */
+            overflow: auto; /* Включи прокрутку при необходимости */
+            background-color: rgba(0,0,0,0.5); /* Черный с прозрачностью */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 5% сверху и центрирование */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%; /* Ширина */
+            max-width: 600px;
+            border-radius: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Стили для кнопок с анимацией ты просил и я добавил */
+        .animated-button {
+            transition: transform 0.2s;
+        }
+
+        .animated-button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Стили для логотипа */
+        .logo {
+            height: 50px;
+            width: auto;
+        }
+
+        /* Стили для анимации частиц */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            top: 0;
+            left: 0;
+        }
+
+        /* Стили для раздела групп */
+        #groups {
+            margin-top: 2rem;
+        }
+
+        #career-path {
+            margin-top: 2rem;
+        }
+
+        /* Стили для форм групп */
+        .group-form {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .group-list {
+            margin-top: 1rem;
+        }
+
+        .group-item {
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-item button {
+            margin-left: 0.5rem;
+        }
+
+        /* Стили для диаграммы карьерного пути */
+        #career-diagram {
+            width: 100%;
+            height: 400px;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        /* Обеспечение адаптивности SVG */
+        #career-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Стили для индикатора загрузки */
+        #upload-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            color: #000;
+            z-index: 100;
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Анимация частиц "цифрового дождя" -->
+    <div id="particles-js"></div>
+
+    <!-- Header с логотипом проекта и переключателем темы -->
+    <header class="bg-blue-600 text-white p-6 shadow-lg flex justify-between items-center">
+        <div class="flex items-center">
+            <!-- Обновленная ссылка на логотип проекта да я сделал сам -->
+            <svg class="logo mr-4" width="80" height="40" viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="40" fill="#009FDF"/>
+  <path d="M10 10h12v7H10zM26 10h12v7H26zM42 10h12v7H42zM10 23h12v7H10zM26 23h12v7H26z" fill="#FFFFFF"/>
+</svg>
+            <h1 class="text-4xl font-bold">SkillChain</h1>
+        </div>
+        <nav>
+            <!-- Кнопка переключения темы (светлая/темная) -->
+            <button id="theme-toggle" class="bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition duration-300">
+                <i class="fa fa-moon"></i>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="flex-grow container mx-auto p-6">
+        <!-- Введение с диаграммой -->
+        <section id="introduction" class="mb-12 fade-in">
+            <h2 class="text-3xl font-semibold mb-4 text-center">Добро пожаловать в SkillChain</h2>
+            <p class="text-center mb-6">Платформа для создания и управления цифровыми профилями сотрудников на основе Verifiable Credentials и NFT.</p>
+            <div class="flex justify-center">
+                <!-- Диаграмма Mermaid для визуализации архитектуры -->
+                <div class="mermaid">
+                    graph TD
+                        A[Пользователь] --> B[Фронтенд]
+                        B --> C[LocalStorage]
+                        B --> D[MetaMask]
+                        B --> E[Смарт-контракт NFT]
+                        E --> F[Блокчейн]
+                </div>
+            </div>
+        </section>
+
+        <!-- Профиль -->
+        <section id="profile" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Профиль сотрудника</h2>
+            <form id="profile-form" class="space-y-4 max-w-md mx-auto">
+                <div>
+                    <label class="block text-lg font-medium">Имя:</label>
+                    <input type="text" id="name" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium">Должность:</label>
+                    <input type="text" id="position" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-3 rounded-lg shadow hover:bg-blue-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Сохранить</span>
+                    <i class="fa fa-save ml-2"></i>
+                </button>
+            </form>
+            <div id="profile-display" class="mt-6 hidden max-w-md mx-auto text-center">
+                <p class="text-xl"><strong>Имя:</strong> <span id="display-name"></span></p>
+                <p class="text-xl"><strong>Должность:</strong> <span id="display-position"></span></p>
+                <button id="edit-profile" class="mt-4 bg-yellow-500 text-white py-2 px-4 rounded-lg shadow hover:bg-yellow-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Редактировать</span>
+                    <i class="fa fa-edit ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Сертификаты -->
+        <section id="certificates" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Сертификаты и Награды</h2>
+            <form id="certificate-form" class="space-y-4 max-w-lg mx-auto">
+                <div>
+                    <label class="block text-lg font-medium">Название сертификата:</label>
+                    <input type="text" id="certificate-name" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium">Описание:</label>
+                    <textarea id="certificate-description" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-green-500 text-white py-3 rounded-lg shadow hover:bg-green-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Добавить сертификат</span>
+                    <i class="fa fa-plus ml-2"></i>
+                </button>
+            </form>
+            <div id="certificates-list" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Навыки -->
+        <section id="skills" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Навыки и Достижения</h2>
+            <form id="skill-form" class="space-y-4 max-w-lg mx-auto">
+                <div>
+                    <label class="block text-lg font-medium">Навык:</label>
+                    <input type="text" id="skill-name" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium">Уровень:</label>
+                    <select id="skill-level" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        <option value="" disabled selected>Выберите уровень</option>
+                        <option value="Начальный">Начальный</option>
+                        <option value="Средний">Средний</option>
+                        <option value="Продвинутый">Продвинутый</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-purple-500 text-white py-3 rounded-lg shadow hover:bg-purple-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Добавить навык</span>
+                    <i class="fa fa-plus ml-2"></i>
+                </button>
+            </form>
+            <div id="skills-list" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Рекомендации -->
+        <section id="recommendations" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Рекомендации</h2>
+            <form id="recommendation-form" class="space-y-4 max-w-lg mx-auto">
+                <div>
+                    <label class="block text-lg font-medium">Имя рекомендателя:</label>
+                    <input type="text" id="recommender-name" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium">Текст рекомендации:</label>
+                    <textarea id="recommendation-text" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-indigo-500 text-white py-3 rounded-lg shadow hover:bg-indigo-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Добавить рекомендацию</span>
+                    <i class="fa fa-plus ml-2"></i>
+                </button>
+            </form>
+            <div id="recommendations-list" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Социальные группы -->
+        <section id="groups" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Социальные Группы</h2>
+            <form id="group-form" class="group-form space-y-4 max-w-lg mx-auto">
+                <div>
+                    <label class="block text-lg font-medium">Название группы:</label>
+                    <input type="text" id="group-name" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-lg font-medium">Описание:</label>
+                    <textarea id="group-description" class="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-3 rounded-lg shadow hover:bg-blue-600 transition duration-300 flex justify-center items-center animated-button">
+                    <span>Создать группу</span>
+                    <i class="fa fa-plus ml-2"></i>
+                </button>
+            </form>
+            <div id="groups-list" class="group-list mt-6">
+                <!-- Список групп будет добавляться здесь -->
+            </div>
+        </section>
+
+        <!-- Карьерный путь -->
+        <section id="career-path" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Карьерный Путь</h2>
+            <div id="career-diagram">
+                <!-- Простая диаграмма карьерного пути с использованием D3.js -->
+                <svg id="career-svg" width="100%" height="100%"></svg>
+            </div>
+        </section>
+
+        <!-- Верификация и MetaMask -->
+        <section id="verification" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Верификация и NFT</h2>
+            <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                <button id="verify-button" class="flex items-center bg-red-500 text-white py-3 px-6 rounded-lg shadow hover:bg-red-600 transition duration-300 pulse-button animated-button">
+                    <span>Верифицировать сертификаты</span>
+                    <i class="fa fa-check ml-2"></i>
+                </button>
+                <button id="connect-metamask" class="flex items-center bg-orange-500 text-white py-3 px-6 rounded-lg shadow hover:bg-orange-600 transition duration-300 pulse-button animated-button">
+                    <span>Подключить MetaMask</span>
+                    <i class="fa fa-wallet ml-2"></i>
+                </button>
+            </div>
+            <div id="wallet-address" class="mt-4 text-center text-lg font-medium"></div>
+        </section>
+
+        <!-- Стейкинг NFT -->
+        <section id="nft-staking" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Стейкинг NFT</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="available-nfts" class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-4">Доступные NFT</h3>
+                    <ul id="nft-list" class="space-y-2"></ul>
+                </div>
+                <div id="staked-nfts" class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-4">Застейканные NFT</h3>
+                    <ul id="staked-list" class="space-y-2"></ul>
+                    <p class="mt-4">Накопленные очки стажа: <span id="staking-points">0</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Интеграция с внешними сервисами -->
+        <section id="external-services" class="mb-12 fade-in">
+    <h2 class="text-2xl font-bold mb-4">Интеграция с внешними сервисами</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <svg class="mx-auto mb-4 w-24 h-24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 64C49.6731 64 64 49.6731 64 32C64 14.3269 49.6731 0 32 0C14.3269 0 0 14.3269 0 32C0 49.6731 14.3269 64 32 64Z" fill="#0056D2"/>
+                <path d="M32 8C18.7452 8 8 18.7452 8 32C8 45.2548 18.7452 56 32 56C45.2548 56 56 45.2548 56 32C56 18.7452 45.2548 8 32 8ZM32 54C19.8497 54 10 44.1503 10 32C10 19.8497 19.8497 10 32 10C44.1503 10 54 19.8497 54 32C54 44.1503 44.1503 54 32 54Z" fill="white"/>
+                <path d="M32 16C23.1634 16 16 23.1634 16 32C16 40.8366 23.1634 48 32 48C40.8366 48 48 40.8366 48 32C48 23.1634 40.8366 16 32 16ZM32 46C24.268 46 18 39.732 18 32C18 24.268 24.268 18 32 18C39.732 18 46 24.268 46 32C46 39.732 39.732 46 32 46Z" fill="white"/>
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Coursera</h3>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="integrateService('Coursera')">Интегрировать</button>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <svg class="mx-auto mb-4 w-24 h-24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="64" height="64" rx="8" fill="#0A66C2"/>
+                <path d="M20 26H14V50H20V26Z" fill="white"/>
+                <path d="M17 23C18.6569 23 20 21.6569 20 20C20 18.3431 18.6569 17 17 17C15.3431 17 14 18.3431 14 20C14 21.6569 15.3431 23 17 23Z" fill="white"/>
+                <path d="M39 50H33V38C33 35.2386 30.7614 33 28 33C25.2386 33 23 35.2386 23 38V50H17V26H23V29.1707C24.9744 26.9694 27.8483 26 31 26C35.4183 26 39 29.5817 39 34V50Z" fill="white"/>
+            </svg>
+            <h3 class="text-xl font-bold mb-2">LinkedIn Learning</h3>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="integrateService('LinkedIn Learning')">Интегрировать</button>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <svg class="mx-auto mb-4 w-24 h-24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="64" height="64" rx="8" fill="#02B3E4"/>
+                <path d="M32 16L16 24V40L32 48L48 40V24L32 16Z" fill="white"/>
+                <path d="M32 16V24L48 32V24L32 16Z" fill="#01A3D4"/>
+                <path d="M32 16L16 24L32 32L48 24L32 16Z" fill="#01A3D4"/>
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Udacity</h3>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="integrateService('Udacity')">Интегрировать</button>
+        </div>
+    </div>
+</section>
+
+        <!-- Soulbound NFT -->
+        <section id="soulbound-nft" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4">Soulbound NFT</h2>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold mb-4">Ваш Soulbound NFT (Неотчуждаемый сертификат)</h3>
+                <div id="soulbound-nft-display" class="text-center p-4 border rounded-lg">
+                    <p>У вас пока нет Soulbound NFT</p>
+                </div>
+                <button id="create-soulbound-nft" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">Создать Soulbound NFT</button>
+            </div>
+        </section>
+
+        <!-- Диаграмма функциональных возможностей -->
+        <section id="functionalities" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4 text-center">Функциональные Возможности</h2>
+            <div class="flex justify-center">
+                <div class="mermaid">
+                    graph LR
+                        A[Создание профиля] --> B[Добавление сертификатов]
+                        B --> C[Верификация сертификатов]
+                        C --> D[Выпуск NFT]
+                        D --> E[Просмотр NFT]
+                        A --> F[Добавление навыков]
+                        F --> G[Система геймификации]
+                        A --> H[Добавление рекомендаций]
+                        H --> I[Отображение рекомендаций]
+                        C --> J[Интеграция с MetaMask]
+                        G --> K[Награды и достижения]
+                        J --> L[Управление кошельком]
+                </div>
+            </div>
+        </section>
+
+        <!-- Диаграмма навыков -->
+        <section id="skills-chart" class="mb-12 fade-in">
+            <h2 class="text-2xl font-bold mb-4 text-center">Визуализация Навыков</h2>
+            <div class="flex justify-center">
+                <canvas id="skillsChart" width="400" height="200"></canvas>
+            </div>
+        </section>
+
+        <!-- Модальное окно для подробностей сертификата -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 class="text-2xl font-bold mb-4">Подробности Сертификата</h2>
+                <p id="modal-content" class="mb-4"></p>
+                <button class="bg-blue-500 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-600 transition duration-300">Закрыть</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white p-6 text-center">
+        &copy; 2024 SkillChain. Все права защищены.
+    </footer>
+
+    <!-- Баллы за геймификацию -->
+    <div id="points-display" class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center">
+        <i class="fa fa-star mr-2"></i> Баллы: <span id="points" class="ml-2">0</span>
+    </div>
+
+    <!-- Подключение particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS.load('particles-js', 'https://raw.githubusercontent.com/VincentGarreau/particles.js/master/demo/particles.json', function() {
+            console.log('particles.js loaded');
+        });
+    </script>
+
+    <!-- Скрипт -->
+    <script>
+        // Инициализация данных из localStorage 
+        const profile = JSON.parse(localStorage.getItem('profile')) || {};
+        const certificates = JSON.parse(localStorage.getItem('certificates')) || [];
+        const skills = JSON.parse(localStorage.getItem('skills')) || [];
+        const recommendations = JSON.parse(localStorage.getItem('recommendations')) || [];
+        const groups = JSON.parse(localStorage.getItem('groups')) || [];
+        let points = parseInt(localStorage.getItem('points')) || 0;
+
+        // Достижения и условия для их получения
+        const achievements = [
+            { id: 'first_cert', name: 'Первый сертификат', condition: user => user.certificates.length > 0 },
+            { id: 'skill_master', name: 'Мастер навыков', condition: user => user.skills.length >= 10 },
+            { id: 'group_creator', name: 'Создатель группы', condition: user => user.groups && user.groups.length > 0 },
+            // надо добавить еще больше достижений 
+        ];
+
+        function checkAchievements(user) {
+            return achievements.filter(a => a.condition(user) && !user.achievements.includes(a.id));
+        }
+
+        // Элементы DOM
+        const profileForm = document.getElementById('profile-form');
+        const profileDisplay = document.getElementById('profile-display');
+        const displayName = document.getElementById('display-name');
+        const displayPosition = document.getElementById('display-position');
+        const editProfileBtn = document.getElementById('edit-profile');
+
+        const certificateForm = document.getElementById('certificate-form');
+        const certificatesList = document.getElementById('certificates-list');
+
+        const skillForm = document.getElementById('skill-form');
+        const skillsList = document.getElementById('skills-list');
+
+        const recommendationForm = document.getElementById('recommendation-form');
+        const recommendationsList = document.getElementById('recommendations-list');
+
+        const groupForm = document.getElementById('group-form');
+        const groupsList = document.getElementById('groups-list');
+
+        const verifyButton = document.getElementById('verify-button');
+        const connectMetaMaskBtn = document.getElementById('connect-metamask');
+        const walletAddressDisplay = document.getElementById('wallet-address');
+
+        const pointsDisplay = document.getElementById('points');
+        pointsDisplay.textContent = points;
+
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Модальное окно
+        const modal = document.getElementById('modal');
+        const closeModal = document.getElementsByClassName('close')[0];
+        const modalContent = document.getElementById('modal-content');
+
+        // Функции для сохранения данных в localStorage
+        function saveProfile() {
+            localStorage.setItem('profile', JSON.stringify(profile));
+        }
+
+        function saveCertificates() {
+            localStorage.setItem('certificates', JSON.stringify(certificates));
+        }
+
+        function saveSkills() {
+            localStorage.setItem('skills', JSON.stringify(skills));
+            updateSkillsChart();
+            updateCareerPath();
+            renderNFTs();
+        }
+
+        function saveRecommendations() {
+            localStorage.setItem('recommendations', JSON.stringify(recommendations));
+        }
+
+        function saveGroups() {
+            localStorage.setItem('groups', JSON.stringify(groups));
+        }
+
+        function savePoints() {
+            localStorage.setItem('points', points);
+        }
+
+        // Функции для отображения данных
+        function renderProfile() {
+            if (profile.name && profile.position) {
+                displayName.textContent = profile.name;
+                displayPosition.textContent = profile.position;
+                profileDisplay.classList.remove('hidden');
+                profileForm.classList.add('hidden');
+            } else {
+                profileDisplay.classList.add('hidden');
+                profileForm.classList.remove('hidden');
+            }
+        }
+
+        function renderCertificates() {
+            certificatesList.innerHTML = '';
+            certificates.forEach(cert => {
+                const certDiv = document.createElement('div');
+                certDiv.classList.add('bg-white', 'p-6', 'rounded-lg', 'shadow-lg', 'transform', 'hover:scale-105', 'transition', 'duration-300', 'relative', 'animate__animated', 'animate__fadeIn');
+                certDiv.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${cert.name}</h3>
+                    <p class="mb-2">${cert.description}</p>
+                    <p class="text-sm text-gray-500">ID: ${cert.id}</p>
+                    ${cert.ipfsHash ? `<p class="text-sm text-gray-500">IPFS Hash: ${cert.ipfsHash}</p>` : ''}
+                    ${cert.nft ? `<p class="text-sm text-gray-500">NFT ID: ${cert.nft}</p>` : ''}
+                    ${cert.issuer ? `<p class="text-sm text-gray-500">Issuer: ${cert.issuer}</p>` : ''}
+                    ${cert.holder ? `<p class="text-sm text-gray-500">Holder: ${cert.holder}</p>` : ''}
+                    <button class="share-button absolute top-4 right-4 bg-blue-400 text-white p-2 rounded-full shadow hover:bg-blue-500 transition duration-300" title="Поделиться">
+                        <i class="fa fa-share"></i>
+                    </button>
+                    <button class="details-button absolute bottom-4 right-4 bg-green-400 text-white p-2 rounded-full shadow hover:bg-green-500 transition duration-300" title="Подробнее">
+                        <i class="fa fa-info"></i>
+                    </button>
+                    <button class="verify-button absolute bottom-4 left-4 bg-purple-400 text-white p-2 rounded-full shadow hover:bg-purple-500 transition duration-300" title="Проверить сертификат">
+                        <i class="fa fa-check"></i>
+                    </button>
+                `;
+                // Добавление обработчика для кнопки "Поделиться"
+                certDiv.querySelector('.share-button').addEventListener('click', () => {
+                    shareToVK(cert);
+                });
+                // Добавление обработчика для кнопки "Подробнее"
+                certDiv.querySelector('.details-button').addEventListener('click', () => {
+                    modalContent.innerHTML = `
+                        <h3 class="text-xl font-bold mb-2">${cert.name}</h3>
+                        <p>${cert.description}</p>
+                        <p class="text-sm text-gray-500">ID: ${cert.id}</p>
+                        ${cert.ipfsHash ? `<p class="text-sm text-gray-500">IPFS Hash: ${cert.ipfsHash}</p>` : ''}
+                        ${cert.nft ? `<p class="text-sm text-gray-500">NFT ID: ${cert.nft}</p>` : ''}
+                        ${cert.issuer ? `<p class="text-sm text-gray-500">Issuer: ${cert.issuer}</p>` : ''}
+                        ${cert.holder ? `<p class="text-sm text-gray-500">Holder: ${cert.holder}</p>` : ''}
+                    `;
+                    modal.style.display = "block";
+                });
+                // Добавление обработчика для кнопки "Проверить сертификат"
+                certDiv.querySelector('.verify-button').addEventListener('click', () => {
+                    verifyCertificate(cert);
+                });
+                certificatesList.appendChild(certDiv);
+            });
+        }
+
+        function renderSkills() {
+            skillsList.innerHTML = '';
+            skills.forEach(skill => {
+                const skillDiv = document.createElement('div');
+                skillDiv.classList.add('bg-white', 'p-6', 'rounded-lg', 'shadow-lg', 'transform', 'hover:scale-105', 'transition', 'duration-300', 'animate__animated', 'animate__fadeIn');
+                let progressWidth;
+                switch(skill.level) {
+                    case 'Начальный': progressWidth = '33%'; break;
+                    case 'Средний': progressWidth = '66%'; break;
+                    case 'Продвинутый': progressWidth = '100%'; break;
+                    default: progressWidth = '0%';
+                }
+                skillDiv.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${skill.name}</h3>
+                    <p class="mb-2">Уровень: ${skill.level}</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div class="bg-blue-600 h-2.5 rounded-full animate__animated animate__slideInLeft" style="width: ${progressWidth}"></div>
+                    </div>
+                `;
+                skillsList.appendChild(skillDiv);
+            });
+            updateSkillsChart();
+            updateCareerPath();
+        }
+
+        function renderRecommendations() {
+            recommendationsList.innerHTML = '';
+            recommendations.forEach(rec => {
+                const recDiv = document.createElement('div');
+                recDiv.classList.add('bg-white', 'p-6', 'rounded-lg', 'shadow-lg', 'transform', 'hover:scale-105', 'transition', 'duration-300', 'animate__animated', 'animate__fadeIn');
+                recDiv.innerHTML = `
+                    <p class="italic mb-2">"${rec.text}"</p>
+                    <p class="text-sm text-gray-500">- ${rec.name}</p>
+                `;
+                recommendationsList.appendChild(recDiv);
+            });
+        }
+
+        function renderGroupsList() {
+            groupsList.innerHTML = '';
+            if (groups.length === 0) {
+                groupsList.innerHTML = '<p class="text-center text-gray-500">Группы пока не созданы.</p>';
+                return;
+            }
+            groups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.classList.add('group-item', 'flex', 'justify-between', 'items-center');
+                groupDiv.innerHTML = `
+                    <div>
+                        <h3 class="text-xl font-bold">${group.name}</h3>
+                        <p class="text-gray-600">${group.description}</p>
+                        <p class="text-sm text-gray-500">Участники: ${group.members.length}</p>
+                    </div>
+                    <button class="join-group-button bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition duration-300">
+                        <i class="fa fa-user-plus mr-2"></i> Присоединиться
+                    </button>
+                `;
+                // Обработчик кнопки "Присоединиться"
+                groupDiv.querySelector('.join-group-button').addEventListener('click', () => {
+                    joinGroup(group.id);
+                });
+                groupsList.appendChild(groupDiv);
+            });
+        }
+
+        function renderCareerPath() {
+            // Карьерный путь будет визуализироваться в разделе #career-diagram
+            // Здесь используется D3.js для создания простой диаграммы
+            const svg = d3.select("#career-svg");
+            svg.selectAll("*").remove(); // Очистка SVG
+
+            const width = document.getElementById('career-svg').clientWidth;
+            const height = document.getElementById('career-svg').clientHeight;
+
+            // Пример данных для карьерного пути
+            const careerData = {
+                "name": profile.name || "Вы",
+                "children": [
+                    {
+                        "name": "Улучшение Навыков",
+                        "children": skills.map(skill => ({ "name": skill.name }))
+                    },
+                    {
+                        "name": "Получение Сертификатов",
+                        "children": certificates.map(cert => ({ "name": cert.name }))
+                    },
+                    {
+                        "name": "Участие в Группах",
+                        "children": groups.map(group => ({ "name": group.name }))
+                    }
+                ]
+            };
+
+            const root = d3.hierarchy(careerData);
+            const treeLayout = d3.tree().size([height - 100, width - 160]);
+            treeLayout(root);
+
+            // Создание линий
+            svg.append("g")
+                .attr("transform", "translate(80,50)")
+                .selectAll("path")
+                .data(root.links())
+                .enter()
+                .append("path")
+                .attr("d", d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x))
+                .attr("fill", "none")
+                .attr("stroke", "#555");
+
+            // Создание узлов
+            const node = svg.append("g")
+                .attr("transform", "translate(80,50)")
+                .selectAll("g")
+                .data(root.descendants())
+                .enter()
+                .append("g")
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+
+            node.append("circle")
+                .attr("r", 5)
+                .attr("fill", d => d.children ? "#555" : "#999");
+
+            node.append("text")
+                .attr("dy", 3)
+                .attr("x", d => d.children ? -10 : 10)
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .text(d => d.data.name);
+        }
+
+        function updateCareerPath() {
+            renderCareerPath();
+        }
+
+        function joinGroup(groupId) {
+            if (!profile.name) {
+                alert('Пожалуйста, заполните профиль перед присоединением к группе.');
+                return;
+            }
+
+            const group = groups.find(g => g.id === groupId);
+            if (group) {
+                if (!group.members.includes(profile.name)) {
+                    group.members.push(profile.name);
+                    saveGroups();
+                    renderGroupsList();
+                    updatePoints(5); // Добавляем 5 баллов за присоединение к группе
+                    alert(`Вы успешно присоединились к группе "${group.name}"!`);
+                    checkUserAchievements();
+                } else {
+                    alert('Вы уже состоите в этой группе.');
+                }
+            }
+        }
+
+        function renderGroups() {
+            renderGroupsList();
+        }
+
+        function renderCareerPathVisualization() {
+            renderCareerPath();
+        }
+
+        function updatePoints(amount) {
+            points += amount;
+            savePoints();
+            pointsDisplay.textContent = points;
+        }
+
+        // Функции для визуализации навыков с помощью Chart.js
+        let skillsChart;
+        function updateSkillsChart() {
+            const ctx = document.getElementById('skillsChart').getContext('2d');
+            const labels = skills.map(skill => skill.name);
+            const data = skills.map(skill => {
+                switch(skill.level) {
+                    case 'Начальный': return 33;
+                    case 'Средний': return 66;
+                    case 'Продвинутый': return 100;
+                    default: return 0;
+                }
+            });
+
+            if (skillsChart) {
+                skillsChart.destroy();
+            }
+
+            skillsChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Уровень навыков',
+                        data: data,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(99, 102, 241, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Обработчики форм
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            profile.name = document.getElementById('name').value.trim();
+            profile.position = document.getElementById('position').value.trim();
+            saveProfile();
+            renderProfile();
+            profileForm.reset();
+            updatePoints(5); // Добавим 5 баллов за заполнение профиля
+            checkUserAchievements();
+        });
+
+        editProfileBtn.addEventListener('click', () => {
+            profileForm.classList.remove('hidden');
+            profileDisplay.classList.add('hidden');
+        });
+
+        certificateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('certificate-name').value.trim();
+            const description = document.getElementById('certificate-description').value.trim();
+            const id = generateUniqueId();
+            const issuer = "SkillChain"; // Название проекта 
+            const holder = profile.name || "Неизвестный держатель"; // Имя пользователя из профиля
+            const ipfsHash = await uploadToIPFS({ name, description, id, issuer, holder });
+            certificates.push({ name, description, id, ipfsHash, issuer, holder, staked: false }); // Добавил поле staked
+            saveCertificates();
+            renderCertificates();
+            certificateForm.reset();
+            updatePoints(10); // Добавим 10 баллов за добавление сертификата
+            checkUserAchievements();
+        });
+
+        skillForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('skill-name').value.trim();
+            const level = document.getElementById('skill-level').value;
+            if (skills.some(skill => skill.name.toLowerCase() === name.toLowerCase())) {
+                alert('Этот навык уже добавлен.');
+                return;
+            }
+            skills.push({ name, level });
+            saveSkills();
+            renderSkills();
+            skillForm.reset();
+            updatePoints(10); // Добавим 10 баллов за навык
+            checkUserAchievements();
+        });
+
+        recommendationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('recommender-name').value.trim();
+            const text = document.getElementById('recommendation-text').value.trim();
+            recommendations.push({ name, text });
+            saveRecommendations();
+            renderRecommendations();
+            recommendationForm.reset();
+            updatePoints(5); // Добавим 5 баллов за рекомендацию
+            checkUserAchievements();
+        });
+
+        groupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('group-name').value.trim();
+            const description = document.getElementById('group-description').value.trim();
+            if (!profile.name) {
+                alert('Пожалуйста, заполните профиль перед созданием группы.');
+                return;
+            }
+            const id = generateUniqueId();
+            const newGroup = { id, name, description, members: [profile.name] };
+            groups.push(newGroup);
+            profile.groups = profile.groups || [];
+            profile.groups.push(id);
+            saveGroups();
+            saveProfile();
+            renderGroupsList();
+            groupForm.reset();
+            updatePoints(15); // Добавим 15 баллов за создание группы
+            checkUserAchievements();
+        });
+
+        // Генерация уникального ID
+        function generateUniqueId() {
+            return 'id-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        }
+
+        // концепт загрузки в IPFS
+        function showUploadingStatus(isUploading) {
+            let statusElement = document.getElementById('upload-status');
+            if (!statusElement) {
+                statusElement = document.createElement('div');
+                statusElement.id = 'upload-status';
+                statusElement.style.position = 'fixed';
+                statusElement.style.top = '10px';
+                statusElement.style.right = '10px';
+                statusElement.style.padding = '10px';
+                statusElement.style.borderRadius = '5px';
+                statusElement.style.color = '#000';
+                statusElement.style.zIndex = '100';
+                document.body.appendChild(statusElement);
+            }
+            statusElement.style.backgroundColor = isUploading ? '#ffff00' : '#00ff00';
+            statusElement.textContent = isUploading ? 'Загрузка в IPFS...' : 'Загрузка завершена';
+
+            if (!isUploading) {
+                setTimeout(() => {
+                    statusElement.remove();
+                }, 3000);
+            }
+        }
+
+        async function uploadToIPFS(data) {
+            showUploadingStatus(true);
+            console.log("Имитация загрузки данных в IPFS:", data);
+            
+            // Имитация задержки сети
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Генерация IPFS-хеша
+            const fakeHash = 'Qm' + Math.random().toString(36).substr(2, 32);
+            
+            console.log(`Данные успешно "загружены" в IPFS. Хеш: ${fakeHash}`);
+            showUploadingStatus(false);
+            return fakeHash;
+        }
+
+        // Функция шеринга в VK
+        function shareToVK(cert) {
+            const shareUrl = `https://vk.com/share.php?url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(`Я получил сертификат "${cert.name}" на платформе SkillChain!`)}`;
+            window.open(shareUrl, '_blank');
+        }
+
+        // Функция присоединения к группе
+        function joinGroup(groupId) {
+            if (!profile.name) {
+                alert('Пожалуйста, заполните профиль перед присоединением к группе.');
+                return;
+            }
+
+            const group = groups.find(g => g.id === groupId);
+            if (group) {
+                if (!group.members.includes(profile.name)) {
+                    group.members.push(profile.name);
+                    saveGroups();
+                    renderGroupsList();
+                    updatePoints(5); // Добавим 5 баллов за присоединение к группе
+                    alert(`Вы успешно присоединились к группе "${group.name}"!`);
+                    checkUserAchievements();
+                } else {
+                    alert('Вы уже состоите в этой группе.');
+                }
+            }
+        }
+
+        // Функция проверки достижений
+        function checkUserAchievements() {
+            if (!profile.achievements) {
+                profile.achievements = [];
+            }
+            const user = {
+                certificates,
+                skills,
+                groups,
+                achievements: profile.achievements
+            };
+            const newAchievements = checkAchievements(user);
+            if (newAchievements.length > 0) {
+                newAchievements.forEach(a => {
+                    profile.achievements.push(a.id);
+                    alert(`Достигнуто новое достижение: ${a.name}!`);
+                    updatePoints(20); // Добавим 20 баллов за достижение
+                });
+                saveProfile();
+            }
+        }
+
+        // Функция для отображения списка групп
+        function renderGroups() {
+            renderGroupsList();
+        }
+
+        // Функция для визуализации карьерного пути
+        function renderCareerPath() {
+            // Карьерный путь будет визуализироваться в разделе #career-diagram
+            // Здесь используется D3.js для создания простой диаграммы
+            const svg = d3.select("#career-svg");
+            svg.selectAll("*").remove(); // Очистка SVG
+
+            const width = document.getElementById('career-svg').clientWidth;
+            const height = document.getElementById('career-svg').clientHeight;
+
+            // Пример данных для карьерного пути
+            const careerData = {
+                "name": profile.name || "Вы",
+                "children": [
+                    {
+                        "name": "Улучшение Навыков",
+                        "children": skills.map(skill => ({ "name": skill.name }))
+                    },
+                    {
+                        "name": "Получение Сертификатов",
+                        "children": certificates.map(cert => ({ "name": cert.name }))
+                    },
+                    {
+                        "name": "Участие в Группах",
+                        "children": groups.map(group => ({ "name": group.name }))
+                    }
+                ]
+            };
+
+            const root = d3.hierarchy(careerData);
+            const treeLayout = d3.tree().size([height - 100, width - 160]);
+            treeLayout(root);
+
+            // Создание линий
+            svg.append("g")
+                .attr("transform", "translate(80,50)")
+                .selectAll("path")
+                .data(root.links())
+                .enter()
+                .append("path")
+                .attr("d", d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x))
+                .attr("fill", "none")
+                .attr("stroke", "#555");
+
+            // Создание узлов
+            const node = svg.append("g")
+                .attr("transform", "translate(80,50)")
+                .selectAll("g")
+                .data(root.descendants())
+                .enter()
+                .append("g")
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+
+            node.append("circle")
+                .attr("r", 5)
+                .attr("fill", d => d.children ? "#555" : "#999");
+
+            node.append("text")
+                .attr("dy", 3)
+                .attr("x", d => d.children ? -10 : 10)
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .text(d => d.data.name);
+        }
+
+        function updateCareerPath() {
+            renderCareerPath();
+        }
+
+        // Функция верификации сертификата (идея создания Verifier ВТБ)
+        function verifyCertificate(cert) {
+            // Имитация проверки сертификата Verifier ВТБ
+            // В полном приложении здесь будет интеграция с API Verifier ВТБ
+            alert(`Проверка сертификата "${cert.name}" через Verifier ВТБ...\nСертификат ${cert.ipfsHash ? 'действителен' : 'недействителен'}.`);
+        }
+
+        // Инициализация отображения данных
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProfile();
+            renderCertificates();
+            renderSkills();
+            renderRecommendations();
+            renderGroups();
+            updateSkillsChart();
+            updateCareerPath();
+            checkUserAchievements(); // Проверка достижений при загрузке
+            renderSoulboundNFT();
+            renderNFTs();
+        });
+
+        // концепт выпуска NFT и создание Verifiable Credentials
+        verifyButton.addEventListener('click', () => {
+            if (certificates.length === 0) {
+                alert('Нет сертификатов для верификации.');
+                return;
+            }
+
+            certificates.forEach(cert => {
+                if (!cert.nft) {
+                    cert.nft = generateUniqueId();
+                }
+            });
+            saveCertificates();
+            renderCertificates();
+            alert('Сертификаты верифицированы и NFT выпущены!');
+            checkUserAchievements();
+            renderNFTs();
+        });
+
+        // Интеграция с MetaMask
+        async function connectMetaMask() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    const account = accounts[0];
+                    walletAddressDisplay.innerHTML = `<i class="fa fa-check-circle text-green-400 mr-2"></i>Адрес кошелька: ${account}`;
+                } catch (error) {
+                    console.error('Ошибка подключения MetaMask:', error);
+                    walletAddressDisplay.innerHTML = `<i class="fa fa-exclamation-circle text-red-400 mr-2"></i>Ошибка подключения MetaMask.`;
+                }
+            } else {
+                alert('MetaMask не установлен! Пожалуйста, установите MetaMask для полной функциональности.');
+            }
+        }
+
+        connectMetaMaskBtn.addEventListener('click', connectMetaMask);
+
+        // Переключатель темы
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            // Изменение иконки
+            if (body.classList.contains('dark-mode')) {
+                themeToggle.innerHTML = '<i class="fa fa-sun"></i>';
+            } else {
+                themeToggle.innerHTML = '<i class="fa fa-moon"></i>';
+            }
+        });
+
+        // Управление модальным окном
+        closeModal.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Стейкинг NFT функции
+        function renderNFTs() {
+            const nftList = document.getElementById('nft-list');
+            const stakedList = document.getElementById('staked-list');
+            const stakingPoints = document.getElementById('staking-points');
+            
+            nftList.innerHTML = '';
+            stakedList.innerHTML = '';
+            
+            certificates.forEach((cert, index) => {
+                if (cert.nft) {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center';
+                    li.innerHTML = `
+                        <span>${cert.name}</span>
+                        <button class="stake-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" data-index="${index}">
+                            ${cert.staked ? 'Unstake' : 'Stake'}
+                        </button>
+                    `;
+                    if (cert.staked) {
+                        stakedList.appendChild(li);
+                    } else {
+                        nftList.appendChild(li);
+                    }
+                }
+            });
+            
+            // Обновил очки стейкинга
+            const stakedCount = certificates.filter(cert => cert.staked).length;
+            stakingPoints.textContent = stakedCount * 10; // 10 очков за каждый застейканный NFT
+            
+            // Добавил обработчики событий для кнопок стейкинга
+            document.querySelectorAll('.stake-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.getAttribute('data-index');
+                    certificates[index].staked = !certificates[index].staked;
+                    saveCertificates();
+                    renderNFTs();
+                });
+            });
+        }
+
+        // Функции для интеграции с внешними сервисами
+        function integrateService(serviceName) {
+            // Имитация процесса интеграции
+            alert(`Начинается интеграция с ${serviceName}...`);
+            setTimeout(() => {
+                const newCertificates = [
+                    { name: `${serviceName} - Введение в блокчейн`, description: "Базовый курс по технологии блокчейн" },
+                    { name: `${serviceName} - Продвинутый JavaScript`, description: "Углубленное изучение JavaScript" }
+                ];
+                newCertificates.forEach(cert => {
+                    cert.id = generateUniqueId();
+                    cert.issuer = serviceName;
+                    cert.holder = profile.name || "Неизвестный держатель";
+                    cert.nft = false; // Изначально NFT не застейкан
+                    certificates.push(cert);
+                });
+                saveCertificates();
+                renderCertificates();
+                renderNFTs();
+                alert(`Интеграция с ${serviceName} завершена. Добавлено ${newCertificates.length} новых сертификатов.`);
+            }, 2000);
+        }
+
+        // Функции для Soulbound NFT
+        let soulboundNFT = null;
+
+        function createSoulboundNFT() {
+            if (soulboundNFT) {
+                alert("У вас уже есть Soulbound NFT. Его нельзя передать или создать заново.");
+                return;
+            }
+            
+            soulboundNFT = {
+                id: generateUniqueId(),
+                name: "Сертификат сотрудника SkillChain",
+                description: "Этот неотчуждаемый сертификат подтверждает вашу идентичность как сотрудника SkillChain",
+                createdAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem('soulboundNFT', JSON.stringify(soulboundNFT));
+            renderSoulboundNFT();
+            updatePoints(20); // Добавим 20 баллов за создание Soulbound NFT
+        }
+
+        function renderSoulboundNFT() {
+            const display = document.getElementById('soulbound-nft-display');
+            if (soulboundNFT) {
+                display.innerHTML = `
+                    <h4 class="text-lg font-bold">${soulboundNFT.name}</h4>
+                    <p>${soulboundNFT.description}</p>
+                    <p class="text-sm text-gray-500">ID: ${soulboundNFT.id}</p>
+                    <p class="text-sm text-gray-500">Создан: ${new Date(soulboundNFT.createdAt).toLocaleString()}</p>
+                `;
+            } else {
+                display.innerHTML = '<p>У вас пока нет Soulbound NFT</p>';
+            }
+        }
+
+        document.getElementById('create-soulbound-nft').addEventListener('click', createSoulboundNFT);
+
+        // Загрузка Soulbound NFT при инициализации страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedNFT = localStorage.getItem('soulboundNFT');
+            if (storedNFT) {
+                soulboundNFT = JSON.parse(storedNFT);
+            }
+            renderSoulboundNFT();
+        });
+
+        // Функция стейкинга NFT при загрузке страницы
+        document.addEventListener('DOMContentLoaded', renderNFTs);
+        verifyButton.addEventListener('click', () => {
+            // ... используем уже существующий код верификации написанный выше ...
+            renderNFTs();
+        });
+    </script>
+</body>
+</html>
